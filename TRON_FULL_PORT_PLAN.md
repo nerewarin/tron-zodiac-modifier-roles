@@ -18,15 +18,22 @@ Based on the [official contracts list](https://github.com/gnosisguild/zodiac-mod
 
 ## 📋 **Phase 1: Foundation Contracts**
 
-### **1.1 Types.sol** ⏳ **PENDING**
+### **1.1 Types.sol** ✅ **COMPLETE**
 **File**: `contracts/Types.sol`
-- [ ] Port all enums: `AbiType`, `Operator`, `ExecutionOptions`, `Clearance`
-- [ ] Port all structs: `AbiTypeTree`, `Payload`, `ConditionFlat`, `Condition`, `TargetAddress`, `Role`, `Allowance`, `Consumption`
-- [ ] **TRON Adaptations**: Update `Ether` → `TRX` in comments
-- [ ] **Tests**: Port type validation tests
-- [ ] **Status**: ⏳ Ready to start
+- [x] Port all enums: `AbiType`, `Operator`, `ExecutionOptions`, `Clearance`
+- [x] Port all structs: `AbiTypeTree`, `Payload`, `ConditionFlat`, `Condition`, `TargetAddress`, `Role`, `Allowance`, `Consumption`
+- [x] **TRON Adaptations**: Update `EtherWithinAllowance` → `TRXWithinAllowance`
+- [x] **Compilation**: ✅ Success
+- [x] **Status**: ✅ Complete
 
-### **1.2 _Core.sol** ⏳ **PENDING**
+### **1.2 Periphery Types.sol** ✅ **COMPLETE**
+**File**: `contracts/periphery/Types.sol`
+- [x] Port interfaces: `IMultiSend`, `ITransactionUnwrapper`, `ICustomCondition`
+- [x] Port struct: `UnwrappedTransaction`
+- [x] **Compilation**: ✅ Success
+- [x] **Status**: ✅ Complete
+
+### **1.3 _Core.sol** ⏳ **PENDING**
 **File**: `contracts/_Core.sol`
 - [ ] Port base `Core` contract inheriting from `Modifier`
 - [ ] Port role and allowance mappings
@@ -35,7 +42,7 @@ Based on the [official contracts list](https://github.com/gnosisguild/zodiac-mod
 - [ ] **Tests**: Port core functionality tests
 - [ ] **Status**: ⏳ Depends on Types.sol
 
-### **1.3 Supporting Contracts** ⏳ **PENDING**
+### **1.4 Supporting Contracts** ⏳ **PENDING**
 **Files**: `contracts/Consumptions.sol`, `contracts/Integrity.sol`, `contracts/WriteOnce.sol`
 - [ ] Port consumption tracking logic
 - [ ] Port integrity checking system  
@@ -148,27 +155,37 @@ Based on the [official contracts list](https://github.com/gnosisguild/zodiac-mod
 
 For each contract:
 1. **Port Contract** - Copy and adapt from original
-2. **Port Tests** - Copy and adapt test suite
-3. **Run Tests** - Ensure all tests pass
-4. **Update Plan** - Mark contract as completed
-5. **Move to Next** - Start next contract
+2. **Compile Contract** - Verify compilation with TronBox
+3. **Deploy Contract** - Deploy to Nile testnet
+4. **Basic Functionality Test** - Test core functions work
+5. **Update Plan** - Mark contract as completed
+6. **Move to Next** - Start next contract
+
+**Note**: Full test porting is not feasible due to TronBox requiring real TRON networks (no local blockchain support on Mac M2).
 
 ## 📊 **Current Status**
 
-| Contract | Status | Tests | Dependencies |
-|----------|--------|-------|--------------|
-| Types.sol | ⏳ Ready | ⏳ Pending | None |
-| _Core.sol | ⏳ Pending | ⏳ Pending | Types.sol |
-| Roles.sol | 🔄 In Progress | ✅ Partial | All others |
-| Integrity.sol | ⏳ Pending | ⏳ Pending | Types.sol |
-| Packer.sol | ⏳ Pending | ⏳ Pending | Types.sol |
-| MultiSendUnwrapper.sol | ⏳ Pending | ⏳ Pending | Types.sol |
+| Contract | Status | Compilation | Deployment | Dependencies |
+|----------|--------|-------------|------------|--------------|
+| Types.sol | ✅ Complete | ✅ Success | N/A (Library) | None |
+| periphery/Types.sol | ✅ Complete | ✅ Success | N/A (Library) | None |
+| _Core.sol | 🔄 In Progress | ⏳ Pending | ⏳ Pending | Types.sol |
+| Roles.sol | ⏳ Pending | ⏳ Pending | ⏳ Pending | All others |
+| Integrity.sol | ⏳ Pending | ⏳ Pending | ⏳ Pending | Types.sol |
+| Packer.sol | ⏳ Pending | ⏳ Pending | ⏳ Pending | Types.sol |
+| MultiSendUnwrapper.sol | ⏳ Pending | ⏳ Pending | ⏳ Pending | Types.sol |
 
 ## 🚀 **Next Steps**
 
-1. **Start with Types.sol** - Foundation for everything else
-2. **Port and test each contract individually**
-3. **Update status as we complete each one**
+1. ✅ **Types.sol Complete** - Foundation for everything else
+2. **Port _Core.sol** - Next dependency for Roles.sol
+3. **Compile and deploy each contract** - Verify functionality
 4. **Focus on core functionality first, then TRON adaptations**
 
-This approach ensures we have a working system at each step and can validate our progress incrementally.
+This approach ensures we have a working system at each step and can validate our progress incrementally, despite testing limitations.
+
+## ⚠️ **Testing Limitations**
+
+- **No Local TRON Blockchain**: Mac M2 incompatible with java-tron (RocksDB ARM issue)
+- **TronBox Limitation**: Requires real TRON networks (Nile/Shasta) for testing
+- **Testing Strategy**: Focus on compilation + deployment + basic functionality verification
