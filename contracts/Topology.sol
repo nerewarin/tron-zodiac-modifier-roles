@@ -62,7 +62,7 @@ library Topology {
         uint256 to,
         AbiTypeTree[] memory result
     ) internal pure returns (uint256) {
-        AbiType _type = conditions[from].paramType;
+        uint8 _type = conditions[from].paramType;
         Operator operator = conditions[from].operator;
         uint256 start = bounds[from].start;
         uint256 end = bounds[from].end;
@@ -77,7 +77,7 @@ library Topology {
             return (to + 1);
         }
 
-        end = _type == AbiType.Array ? start + 1 : end;
+        end = _type == ABI_TYPE_ARRAY ? start + 1 : end;
         uint256[] memory fields = new uint256[](end - start);
 
         (uint256 nextTo, uint256 length) = (to + 1, 0);

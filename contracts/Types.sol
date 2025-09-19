@@ -10,16 +10,15 @@ pragma solidity >=0.8.17 <0.9.0;
 
 /**
  * @dev Represents the key type for ABI encoding
+ * Using uint8 constants instead of enum for TronWeb compatibility
  */
-enum AbiType {
-    None,
-    Static,
-    Dynamic,
-    Tuple,
-    Array,
-    Calldata, // AKA AbiEncodedWithSelector,
-    AbiEncoded
-}
+uint8 constant ABI_TYPE_NONE = 0;
+uint8 constant ABI_TYPE_STATIC = 1;
+uint8 constant ABI_TYPE_DYNAMIC = 2;
+uint8 constant ABI_TYPE_TUPLE = 3;
+uint8 constant ABI_TYPE_ARRAY = 4;
+uint8 constant ABI_TYPE_CALLDATA = 5; // AKA AbiEncodedWithSelector
+uint8 constant ABI_TYPE_ABI_ENCODED = 6;
 
 /**
  * @dev Structure representing an ABI type definition
@@ -27,7 +26,7 @@ enum AbiType {
  * @param fields Array of indices pointing to child types in the AbiType array
  */
 struct AbiTypeTree {
-    AbiType _type;
+    uint8 _type;
     uint256[] fields;
 }
 
@@ -45,64 +44,39 @@ struct Payload {
     Payload[] children;
 }
 
-enum Operator {
-    // 00:    EMPTY EXPRESSION (default, always passes)
-    //          paramType: Static / Dynamic / Tuple / Array
-    //          ❓ children (only for paramType: Tuple / Array to describe their structure)
-    //          🚫 compValue
-    /* 00: */ Pass,
-    // ------------------------------------------------------------
-    // 01-04: LOGICAL EXPRESSIONS
-    //          paramType: None
-    //          ✅ children
-    //          🚫 compValue
-    /* 01: */ And,
-    /* 02: */ Or,
-    /* 03: */ Nor,
-    /* 04: */ _Placeholder04,
-    // ------------------------------------------------------------
-    // 05-14: COMPLEX EXPRESSIONS
-    //          paramType: Calldata / AbiEncoded / Tuple / Array,
-    //          ✅ children
-    //          🚫 compValue
-    /* 05: */ Matches,
-    /* 06: */ ArraySome,
-    /* 07: */ ArrayEvery,
-    /* 08: */ ArraySubset,
-    /* 09: */ _Placeholder09,
-    /* 10: */ _Placeholder10,
-    /* 11: */ _Placeholder11,
-    /* 12: */ _Placeholder12,
-    /* 13: */ _Placeholder13,
-    /* 14: */ _Placeholder14,
-    // ------------------------------------------------------------
-    // 15:    SPECIAL COMPARISON (without compValue)
-    //          paramType: Static
-    //          🚫 children
-    //          🚫 compValue
-    /* 15: */ EqualToAvatar,
-    // ------------------------------------------------------------
-    // 16-31: COMPARISON EXPRESSIONS
-    //          paramType: Static / Dynamic / Tuple / Array
-    //          ❓ children (only for paramType: Tuple / Array to describe their structure)
-    //          ✅ compValue
-    /* 16: */ EqualTo, // paramType: Static / Dynamic / Tuple / Array
-    /* 17: */ GreaterThan, // paramType: Static
-    /* 18: */ LessThan, // paramType: Static
-    /* 19: */ SignedIntGreaterThan, // paramType: Static
-    /* 20: */ SignedIntLessThan, // paramType: Static
-    /* 21: */ Bitmask, // paramType: Static / Dynamic
-    /* 22: */ Custom, // paramType: Static / Dynamic / Tuple / Array
-    /* 23: */ _Placeholder23,
-    /* 24: */ _Placeholder24,
-    /* 25: */ _Placeholder25,
-    /* 26: */ _Placeholder26,
-    /* 27: */ _Placeholder27,
-    /* 28: */ WithinAllowance, // paramType: Static
-    /* 29: */ EtherWithinAllowance, // paramType: None
-    /* 30: */ CallWithinAllowance, // paramType: None
-    /* 31: */ _Placeholder31
-}
+// Operator constants for TronWeb compatibility
+uint8 constant OPERATOR_PASS = 0;
+uint8 constant OPERATOR_AND = 1;
+uint8 constant OPERATOR_OR = 2;
+uint8 constant OPERATOR_NOR = 3;
+uint8 constant OPERATOR_PLACEHOLDER_04 = 4;
+uint8 constant OPERATOR_MATCHES = 5;
+uint8 constant OPERATOR_ARRAY_SOME = 6;
+uint8 constant OPERATOR_ARRAY_EVERY = 7;
+uint8 constant OPERATOR_ARRAY_SUBSET = 8;
+uint8 constant OPERATOR_PLACEHOLDER_09 = 9;
+uint8 constant OPERATOR_PLACEHOLDER_10 = 10;
+uint8 constant OPERATOR_PLACEHOLDER_11 = 11;
+uint8 constant OPERATOR_PLACEHOLDER_12 = 12;
+uint8 constant OPERATOR_PLACEHOLDER_13 = 13;
+uint8 constant OPERATOR_PLACEHOLDER_14 = 14;
+uint8 constant OPERATOR_EQUAL_TO_AVATAR = 15;
+uint8 constant OPERATOR_EQUAL_TO = 16;
+uint8 constant OPERATOR_GREATER_THAN = 17;
+uint8 constant OPERATOR_LESS_THAN = 18;
+uint8 constant OPERATOR_SIGNED_INT_GREATER_THAN = 19;
+uint8 constant OPERATOR_SIGNED_INT_LESS_THAN = 20;
+uint8 constant OPERATOR_BITMASK = 21;
+uint8 constant OPERATOR_CUSTOM = 22;
+uint8 constant OPERATOR_PLACEHOLDER_23 = 23;
+uint8 constant OPERATOR_PLACEHOLDER_24 = 24;
+uint8 constant OPERATOR_PLACEHOLDER_25 = 25;
+uint8 constant OPERATOR_PLACEHOLDER_26 = 26;
+uint8 constant OPERATOR_PLACEHOLDER_27 = 27;
+uint8 constant OPERATOR_WITHIN_ALLOWANCE = 28;
+uint8 constant OPERATOR_ETHER_WITHIN_ALLOWANCE = 29;
+uint8 constant OPERATOR_CALL_WITHIN_ALLOWANCE = 30;
+uint8 constant OPERATOR_PLACEHOLDER_31 = 31;
 
 enum ExecutionOptions {
     None,
@@ -122,14 +96,14 @@ enum Clearance {
 // (ABI does not support recursive types)
 struct ConditionFlat {
     uint8 parent;
-    AbiType paramType;
-    Operator operator;
+    uint8 paramType;
+    uint8 operator;
     bytes compValue;
 }
 
 struct Condition {
-    AbiType paramType;
-    Operator operator;
+    uint8 paramType;
+    uint8 operator;
     bytes32 compValue;
     Condition[] children;
 }

@@ -46,14 +46,14 @@ library Integrity {
 
     function _node(ConditionFlat memory condition, uint256 index) private pure {
         Operator operator = condition.operator;
-        AbiType _type = condition.paramType;
+        uint8 _type = condition.paramType;
         bytes memory compValue = condition.compValue;
         if (operator == Operator.Pass) {
             if (condition.compValue.length != 0) {
                 revert UnsuitableCompValue(index);
             }
         } else if (operator >= Operator.And && operator <= Operator.Nor) {
-            if (_type != AbiType.None) {
+            if (_type != ABI_TYPE_NONE) {
                 revert UnsuitableParameterType(index);
             }
             if (condition.compValue.length != 0) {
@@ -61,10 +61,10 @@ library Integrity {
             }
         } else if (operator == Operator.Matches) {
             if (
-                _type != AbiType.Tuple &&
-                _type != AbiType.Array &&
-                _type != AbiType.Calldata &&
-                _type != AbiType.AbiEncoded
+                _type != ABI_TYPE_TUPLE &&
+                _type != ABI_TYPE_ARRAY &&
+                _type != ABI_TYPE_CALLDATA &&
+                _type != ABI_TYPE_ABI_ENCODED
             ) {
                 revert UnsuitableParameterType(index);
             }
@@ -76,14 +76,14 @@ library Integrity {
             operator == Operator.ArrayEvery ||
             operator == Operator.ArraySubset
         ) {
-            if (_type != AbiType.Array) {
+            if (_type != ABI_TYPE_ARRAY) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 0) {
                 revert UnsuitableCompValue(index);
             }
         } else if (operator == Operator.EqualToAvatar) {
-            if (_type != AbiType.Static) {
+            if (_type != ABI_TYPE_STATIC) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 0) {
@@ -91,10 +91,10 @@ library Integrity {
             }
         } else if (operator == Operator.EqualTo) {
             if (
-                _type != AbiType.Static &&
-                _type != AbiType.Dynamic &&
-                _type != AbiType.Tuple &&
-                _type != AbiType.Array
+                _type != ABI_TYPE_STATIC &&
+                _type != ABI_TYPE_DYNAMIC &&
+                _type != ABI_TYPE_TUPLE &&
+                _type != ABI_TYPE_ARRAY
             ) {
                 revert UnsuitableParameterType(index);
             }
@@ -107,14 +107,14 @@ library Integrity {
             operator == Operator.SignedIntGreaterThan ||
             operator == Operator.SignedIntLessThan
         ) {
-            if (_type != AbiType.Static) {
+            if (_type != ABI_TYPE_STATIC) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 32) {
                 revert UnsuitableCompValue(index);
             }
         } else if (operator == Operator.Bitmask) {
-            if (_type != AbiType.Static && _type != AbiType.Dynamic) {
+            if (_type != ABI_TYPE_STATIC && _type != ABI_TYPE_DYNAMIC) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 32) {
@@ -125,7 +125,7 @@ library Integrity {
                 revert UnsuitableCompValue(index);
             }
         } else if (operator == Operator.WithinAllowance) {
-            if (_type != AbiType.Static) {
+            if (_type != ABI_TYPE_STATIC) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 32) {
@@ -135,7 +135,7 @@ library Integrity {
             operator == Operator.EtherWithinAllowance ||
             operator == Operator.CallWithinAllowance
         ) {
-            if (_type != AbiType.None) {
+            if (_type != ABI_TYPE_NONE) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 32) {
@@ -159,7 +159,7 @@ library Integrity {
             if (
                 (conditions[i].operator == Operator.EtherWithinAllowance ||
                     conditions[i].operator == Operator.CallWithinAllowance) &&
-                conditions[conditions[i].parent].paramType != AbiType.Calldata
+                conditions[conditions[i].parent].paramType != ABI_TYPE_CALLDATA
             ) {
                 revert UnsuitableParent(i);
             }
@@ -173,7 +173,7 @@ library Integrity {
             ConditionFlat memory condition = conditions[i];
             Topology.Bounds memory childBounds = childrenBounds[i];
 
-            if (condition.paramType == AbiType.None) {
+            if (condition.paramType == ABI_TYPE_NONE) {
                 if (
                     (condition.operator == Operator.EtherWithinAllowance ||
                         condition.operator == Operator.CallWithinAllowance) &&
@@ -190,22 +190,22 @@ library Integrity {
                     }
                 }
             } else if (
-                condition.paramType == AbiType.Static ||
-                condition.paramType == AbiType.Dynamic
+                condition.paramType == ABI_TYPE_STATIC ||
+                condition.paramType == ABI_TYPE_DYNAMIC
             ) {
                 if (childBounds.length != 0) {
                     revert UnsuitableChildCount(i);
                 }
             } else if (
-                condition.paramType == AbiType.Tuple ||
-                condition.paramType == AbiType.Calldata ||
-                condition.paramType == AbiType.AbiEncoded
+                condition.paramType == ABI_TYPE_TUPLE ||
+                condition.paramType == ABI_TYPE_CALLDATA ||
+                condition.paramType == ABI_TYPE_ABI_ENCODED
             ) {
                 if (childBounds.length == 0) {
                     revert UnsuitableChildCount(i);
                 }
             } else {
-                assert(condition.paramType == AbiType.Array);
+                assert(condition.paramType == ABI_TYPE_ARRAY);
 
                 if (childBounds.length == 0) {
                     revert UnsuitableChildCount(i);
@@ -231,7 +231,7 @@ library Integrity {
             if (
                 ((condition.operator >= Operator.And &&
                     condition.operator <= Operator.Nor) ||
-                    condition.paramType == AbiType.Array) &&
+                    condition.paramType == ABI_TYPE_ARRAY) &&
                 childrenBounds[i].length > 1
             ) {
                 _compatibleSiblingTypes(conditions, i, childrenBounds);
@@ -244,7 +244,7 @@ library Integrity {
             childrenBounds
         );
 
-        if (typeTree[0]._type != AbiType.Calldata) {
+        if (typeTree[0]._type != ABI_TYPE_CALLDATA) {
             revert UnsuitableRootNode();
         }
     }
@@ -284,12 +284,12 @@ library Integrity {
         uint256 j,
         Topology.Bounds[] memory childrenBounds
     ) private pure returns (bool) {
-        AbiType leftType = Topology
+        uint8 leftType = Topology
         .typeTree(conditions, i, childrenBounds)[0]._type;
         return
-            (leftType == AbiType.Calldata || leftType == AbiType.AbiEncoded) &&
+            (leftType == ABI_TYPE_CALLDATA || leftType == ABI_TYPE_ABI_ENCODED) &&
             Topology.typeTree(conditions, j, childrenBounds)[0]._type ==
-            AbiType.Dynamic;
+            ABI_TYPE_DYNAMIC;
     }
 
     function typeTreeId(

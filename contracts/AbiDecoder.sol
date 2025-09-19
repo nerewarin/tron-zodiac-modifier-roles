@@ -28,8 +28,8 @@ library AbiDecoder {
         uint256 index
     ) internal pure returns (Payload memory result) {
         assert(
-            typeTree[index]._type == AbiType.Calldata ||
-                typeTree[index]._type == AbiType.AbiEncoded
+            typeTree[index]._type == ABI_TYPE_CALLDATA ||
+                typeTree[index]._type == ABI_TYPE_ABI_ENCODED
         );
         /*
          * The parameter encoding area consists of a head region, divided into
@@ -43,7 +43,7 @@ library AbiDecoder {
          */
         __block__(
             data,
-            typeTree[index]._type == AbiType.Calldata ? 4 : 0,
+            typeTree[index]._type == ABI_TYPE_CALLDATA ? 4 : 0,
             typeTree,
             index,
             typeTree[index].fields.length,
@@ -70,13 +70,13 @@ library AbiDecoder {
         uint256 index,
         Payload memory result
     ) private pure {
-        AbiType _type = typeTree[index]._type;
+        uint8 _type = typeTree[index]._type;
 
-        if (_type == AbiType.Static) {
+        if (_type == ABI_TYPE_STATIC) {
             result.size = 32;
-        } else if (_type == AbiType.Dynamic) {
+        } else if (_type == ABI_TYPE_DYNAMIC) {
             result.size = 32 + _ceil32(uint256(word(data, location)));
-        } else if (_type == AbiType.Tuple) {
+        } else if (_type == ABI_TYPE_TUPLE) {
             __block__(
                 data,
                 location,
@@ -85,7 +85,7 @@ library AbiDecoder {
                 typeTree[index].fields.length,
                 result
             );
-        } else if (_type == AbiType.Array) {
+        } else if (_type == ABI_TYPE_ARRAY) {
             __block__(
                 data,
                 location + 32,
@@ -95,10 +95,10 @@ library AbiDecoder {
                 result
             );
             result.size += 32;
-        } else if (_type == AbiType.Calldata || _type == AbiType.AbiEncoded) {
+        } else if (_type == ABI_TYPE_CALLDATA || _type == ABI_TYPE_ABI_ENCODED) {
             __block__(
                 data,
-                location + 32 + (_type == AbiType.Calldata ? 4 : 0),
+                location + 32 + (_type == ABI_TYPE_CALLDATA ? 4 : 0),
                 typeTree,
                 index,
                 typeTree[index].fields.length,
@@ -143,7 +143,7 @@ library AbiDecoder {
         bool isInline;
         uint256 offset;
         for (uint256 i; i < blockLength; i++) {
-            if (i == 0 || node._type != AbiType.Array) {
+            if (i == 0 || node._type != ABI_TYPE_ARRAY) {
                 // For structs or the first element of an array, calculate if element inline
                 // For array elements after the first, they all have the same inline status
                 isInline = _isInline(typeTree, node.fields[i]);
@@ -153,7 +153,7 @@ library AbiDecoder {
                 data,
                 _locationInBlock(data, location, offset, isInline),
                 typeTree,
-                node.fields[node._type == AbiType.Array ? 0 : i],
+                node.fields[node._type == ABI_TYPE_ARRAY ? 0 : i],
                 result.children[i]
             );
 
@@ -209,14 +209,14 @@ library AbiDecoder {
         AbiTypeTree[] memory typeTree,
         uint256 index
     ) private pure returns (bool) {
-        AbiType _type = typeTree[index]._type;
-        if (_type == AbiType.Static) {
+        uint8 _type = typeTree[index]._type;
+        if (_type == ABI_TYPE_STATIC) {
             return true;
         } else if (
-            _type == AbiType.Dynamic ||
-            _type == AbiType.Array ||
-            _type == AbiType.Calldata ||
-            _type == AbiType.AbiEncoded
+            _type == ABI_TYPE_DYNAMIC ||
+            _type == ABI_TYPE_ARRAY ||
+            _type == ABI_TYPE_CALLDATA ||
+            _type == ABI_TYPE_ABI_ENCODED
         ) {
             return false;
         } else {
