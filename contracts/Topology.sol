@@ -63,12 +63,12 @@ library Topology {
         AbiTypeTree[] memory result
     ) internal pure returns (uint256) {
         uint8 _type = conditions[from].paramType;
-        Operator operator = conditions[from].operator;
+        uint8 operator = conditions[from].operator;
         uint256 start = bounds[from].start;
         uint256 end = bounds[from].end;
         bool hasChildren = start < end;
 
-        if (operator >= Operator.And && operator <= Operator.Nor) {
+        if (operator >= OPERATOR_AND && operator <= OPERATOR_NOR) {
             return typeTree(conditions, bounds, start, to, result);
         }
 

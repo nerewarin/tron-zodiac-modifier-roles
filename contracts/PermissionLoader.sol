@@ -61,13 +61,13 @@ abstract contract PermissionLoader is Core {
 
         uint256 allowanceCount;
         for (uint256 i; i < conditionsFlat.length; ) {
-            Operator operator = conditionsFlat[i].operator;
-            if (operator >= Operator.WithinAllowance) {
+            uint8 operator = conditionsFlat[i].operator;
+            if (operator >= OPERATOR_WITHIN_ALLOWANCE) {
                 ++allowanceCount;
-            } else if (operator == Operator.EqualToAvatar) {
-                // patch Operator.EqualToAvatar which in reality works as
+            } else if (operator == OPERATOR_EQUAL_TO_AVATAR) {
+                // patch OPERATOR_EQUAL_TO_AVATAR which in reality works as
                 // a placeholder
-                conditionsFlat[i].operator = Operator.EqualTo;
+                conditionsFlat[i].operator = OPERATOR_EQUAL_TO;
                 compValues[i] = keccak256(abi.encode(avatar));
             }
             unchecked {
@@ -140,7 +140,7 @@ abstract contract PermissionLoader is Core {
         uint256 insert;
 
         for (uint256 i; i < count; ++i) {
-            if (conditions[i].operator < Operator.WithinAllowance) {
+            if (conditions[i].operator < OPERATOR_WITHIN_ALLOWANCE) {
                 continue;
             }
 

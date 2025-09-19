@@ -41,7 +41,7 @@ library BufferPacker {
 
         result = count * BYTES_PER_CONDITION;
         for (uint256 i; i < count; ++i) {
-            if (conditions[i].operator >= Operator.EqualTo) {
+            if (conditions[i].operator >= OPERATOR_EQUAL_TO) {
                 result += 32;
             }
         }
@@ -100,7 +100,7 @@ library BufferPacker {
         uint256 offset,
         ConditionFlat memory condition
     ) internal pure {
-        bytes32 word = condition.operator == Operator.EqualTo
+        bytes32 word = condition.operator == OPERATOR_EQUAL_TO
             ? keccak256(condition.compValue)
             : bytes32(condition.compValue);
 
@@ -136,9 +136,9 @@ library BufferPacker {
             condition.paramType = uint8(
                 (bits & MASK_PARAM_TYPE) >> OFFSET_PARAM_TYPE
             );
-            condition.operator = Operator(bits & MASK_OPERATOR);
+            condition.operator = uint8(bits & MASK_OPERATOR);
 
-            if (condition.operator >= Operator.EqualTo) {
+            if (condition.operator >= OPERATOR_EQUAL_TO) {
                 assembly {
                     word := mload(add(buffer, compValueOffset))
                 }

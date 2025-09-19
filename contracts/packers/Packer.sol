@@ -22,7 +22,7 @@ library Packer {
         uint256 offset = 32 + count * 2;
         for (uint256 i; i < count; ++i) {
             BufferPacker.packCondition(buffer, i, conditionsFlat[i]);
-            if (conditionsFlat[i].operator >= Operator.EqualTo) {
+            if (conditionsFlat[i].operator >= OPERATOR_EQUAL_TO) {
                 BufferPacker.packCompValue(buffer, offset, conditionsFlat[i]);
                 offset += 32;
             }
@@ -49,7 +49,7 @@ library Packer {
         uint256 count = conditionsFlat.length;
         for (uint256 i; i < count; ++i) {
             if (
-                conditionsFlat[i].operator == Operator.EqualTo &&
+                conditionsFlat[i].operator == OPERATOR_EQUAL_TO &&
                 !_isInline(conditionsFlat, i)
             ) {
                 bytes memory compValue = conditionsFlat[i].compValue;

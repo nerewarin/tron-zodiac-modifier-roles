@@ -237,54 +237,54 @@ abstract contract PermissionChecker is Core, Periphery {
         Payload memory payload,
         Context memory context
     ) private view returns (Status, Result memory) {
-        Operator operator = condition.operator;
+        uint8 operator = condition.operator;
 
-        if (operator < Operator.EqualTo) {
-            if (operator == Operator.Pass) {
+        if (operator < OPERATOR_EQUAL_TO) {
+            if (operator == OPERATOR_PASS) {
                 return (
                     Status.Ok,
                     Result({consumptions: context.consumptions, info: 0})
                 );
-            } else if (operator == Operator.Matches) {
+            } else if (operator == OPERATOR_MATCHES) {
                 return _matches(data, condition, payload, context);
-            } else if (operator == Operator.And) {
+            } else if (operator == OPERATOR_AND) {
                 return _and(data, condition, payload, context);
-            } else if (operator == Operator.Or) {
+            } else if (operator == OPERATOR_OR) {
                 return _or(data, condition, payload, context);
-            } else if (operator == Operator.Nor) {
+            } else if (operator == OPERATOR_NOR) {
                 return _nor(data, condition, payload, context);
-            } else if (operator == Operator.ArraySome) {
+            } else if (operator == OPERATOR_ARRAY_SOME) {
                 return _arraySome(data, condition, payload, context);
-            } else if (operator == Operator.ArrayEvery) {
+            } else if (operator == OPERATOR_ARRAY_EVERY) {
                 return _arrayEvery(data, condition, payload, context);
             } else {
-                assert(operator == Operator.ArraySubset);
+                assert(operator == OPERATOR_ARRAY_SUBSET);
                 return _arraySubset(data, condition, payload, context);
             }
         } else {
-            if (operator <= Operator.LessThan) {
+            if (operator <= OPERATOR_LESS_THAN) {
                 return (
                     _compare(data, condition, payload),
                     Result({consumptions: context.consumptions, info: 0})
                 );
-            } else if (operator <= Operator.SignedIntLessThan) {
+            } else if (operator <= OPERATOR_SIGNED_INT_LESS_THAN) {
                 return (
                     _compareSignedInt(data, condition, payload),
                     Result({consumptions: context.consumptions, info: 0})
                 );
-            } else if (operator == Operator.Bitmask) {
+            } else if (operator == OPERATOR_BITMASK) {
                 return (
                     _bitmask(data, condition, payload),
                     Result({consumptions: context.consumptions, info: 0})
                 );
-            } else if (operator == Operator.Custom) {
+            } else if (operator == OPERATOR_CUSTOM) {
                 return _custom(data, condition, payload, context);
-            } else if (operator == Operator.WithinAllowance) {
+            } else if (operator == OPERATOR_WITHIN_ALLOWANCE) {
                 return _withinAllowance(data, condition, payload, context);
-            } else if (operator == Operator.EtherWithinAllowance) {
+            } else if (operator == OPERATOR_ETHER_WITHIN_ALLOWANCE) {
                 return _etherWithinAllowance(condition, context);
             } else {
-                assert(operator == Operator.CallWithinAllowance);
+                assert(operator == OPERATOR_CALL_WITHIN_ALLOWANCE);
                 return _callWithinAllowance(condition, context);
             }
         }
@@ -547,17 +547,17 @@ abstract contract PermissionChecker is Core, Periphery {
         Condition memory condition,
         Payload memory payload
     ) private pure returns (Status) {
-        Operator operator = condition.operator;
+        uint8 operator = condition.operator;
         bytes32 compValue = condition.compValue;
-        bytes32 value = operator == Operator.EqualTo
+        bytes32 value = operator == OPERATOR_EQUAL_TO
             ? keccak256(AbiDecoder.pluck(data, payload.location, payload.size))
             : AbiDecoder.word(data, payload.location);
 
-        if (operator == Operator.EqualTo && value != compValue) {
+        if (operator == OPERATOR_EQUAL_TO && value != compValue) {
             return Status.ParameterNotAllowed;
-        } else if (operator == Operator.GreaterThan && value <= compValue) {
+        } else if (operator == OPERATOR_GREATER_THAN && value <= compValue) {
             return Status.ParameterLessThanAllowed;
-        } else if (operator == Operator.LessThan && value >= compValue) {
+        } else if (operator == OPERATOR_LESS_THAN && value >= compValue) {
             return Status.ParameterGreaterThanAllowed;
         } else {
             return Status.Ok;
@@ -569,14 +569,14 @@ abstract contract PermissionChecker is Core, Periphery {
         Condition memory condition,
         Payload memory payload
     ) private pure returns (Status) {
-        Operator operator = condition.operator;
+        uint8 operator = condition.operator;
         int256 compValue = int256(uint256(condition.compValue));
         int256 value = int256(uint256(AbiDecoder.word(data, payload.location)));
 
-        if (operator == Operator.SignedIntGreaterThan && value <= compValue) {
+        if (operator == OPERATOR_SIGNED_INT_GREATER_THAN && value <= compValue) {
             return Status.ParameterLessThanAllowed;
         } else if (
-            operator == Operator.SignedIntLessThan && value >= compValue
+            operator == OPERATOR_SIGNED_INT_LESS_THAN && value >= compValue
         ) {
             return Status.ParameterGreaterThanAllowed;
         } else {

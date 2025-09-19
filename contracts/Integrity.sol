@@ -45,21 +45,21 @@ library Integrity {
     }
 
     function _node(ConditionFlat memory condition, uint256 index) private pure {
-        Operator operator = condition.operator;
+        uint8 operator = condition.operator;
         uint8 _type = condition.paramType;
         bytes memory compValue = condition.compValue;
-        if (operator == Operator.Pass) {
+        if (operator == OPERATOR_PASS) {
             if (condition.compValue.length != 0) {
                 revert UnsuitableCompValue(index);
             }
-        } else if (operator >= Operator.And && operator <= Operator.Nor) {
+        } else if (operator >= OPERATOR_AND && operator <= OPERATOR_NOR) {
             if (_type != ABI_TYPE_NONE) {
                 revert UnsuitableParameterType(index);
             }
             if (condition.compValue.length != 0) {
                 revert UnsuitableCompValue(index);
             }
-        } else if (operator == Operator.Matches) {
+        } else if (operator == OPERATOR_MATCHES) {
             if (
                 _type != ABI_TYPE_TUPLE &&
                 _type != ABI_TYPE_ARRAY &&
@@ -72,9 +72,9 @@ library Integrity {
                 revert UnsuitableCompValue(index);
             }
         } else if (
-            operator == Operator.ArraySome ||
-            operator == Operator.ArrayEvery ||
-            operator == Operator.ArraySubset
+            operator == OPERATOR_ARRAY_SOME ||
+            operator == OPERATOR_ARRAY_EVERY ||
+            operator == OPERATOR_ARRAY_SUBSET
         ) {
             if (_type != ABI_TYPE_ARRAY) {
                 revert UnsuitableParameterType(index);
@@ -82,14 +82,14 @@ library Integrity {
             if (compValue.length != 0) {
                 revert UnsuitableCompValue(index);
             }
-        } else if (operator == Operator.EqualToAvatar) {
+        } else if (operator == OPERATOR_EQUAL_TO_AVATAR) {
             if (_type != ABI_TYPE_STATIC) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 0) {
                 revert UnsuitableCompValue(index);
             }
-        } else if (operator == Operator.EqualTo) {
+        } else if (operator == OPERATOR_EQUAL_TO) {
             if (
                 _type != ABI_TYPE_STATIC &&
                 _type != ABI_TYPE_DYNAMIC &&
@@ -102,10 +102,10 @@ library Integrity {
                 revert UnsuitableCompValue(index);
             }
         } else if (
-            operator == Operator.GreaterThan ||
-            operator == Operator.LessThan ||
-            operator == Operator.SignedIntGreaterThan ||
-            operator == Operator.SignedIntLessThan
+            operator == OPERATOR_GREATER_THAN ||
+            operator == OPERATOR_LESS_THAN ||
+            operator == OPERATOR_SIGNED_INT_GREATER_THAN ||
+            operator == OPERATOR_SIGNED_INT_LESS_THAN
         ) {
             if (_type != ABI_TYPE_STATIC) {
                 revert UnsuitableParameterType(index);
@@ -113,18 +113,18 @@ library Integrity {
             if (compValue.length != 32) {
                 revert UnsuitableCompValue(index);
             }
-        } else if (operator == Operator.Bitmask) {
+        } else if (operator == OPERATOR_BITMASK) {
             if (_type != ABI_TYPE_STATIC && _type != ABI_TYPE_DYNAMIC) {
                 revert UnsuitableParameterType(index);
             }
             if (compValue.length != 32) {
                 revert UnsuitableCompValue(index);
             }
-        } else if (operator == Operator.Custom) {
+        } else if (operator == OPERATOR_CUSTOM) {
             if (compValue.length != 32) {
                 revert UnsuitableCompValue(index);
             }
-        } else if (operator == Operator.WithinAllowance) {
+        } else if (operator == OPERATOR_WITHIN_ALLOWANCE) {
             if (_type != ABI_TYPE_STATIC) {
                 revert UnsuitableParameterType(index);
             }
@@ -132,8 +132,8 @@ library Integrity {
                 revert UnsuitableCompValue(index);
             }
         } else if (
-            operator == Operator.EtherWithinAllowance ||
-            operator == Operator.CallWithinAllowance
+            operator == OPERATOR_ETHER_WITHIN_ALLOWANCE ||
+            operator == OPERATOR_CALL_WITHIN_ALLOWANCE
         ) {
             if (_type != ABI_TYPE_NONE) {
                 revert UnsuitableParameterType(index);
@@ -157,8 +157,8 @@ library Integrity {
 
         for (uint256 i = 0; i < length; ++i) {
             if (
-                (conditions[i].operator == Operator.EtherWithinAllowance ||
-                    conditions[i].operator == Operator.CallWithinAllowance) &&
+                (conditions[i].operator == OPERATOR_ETHER_WITHIN_ALLOWANCE ||
+                    conditions[i].operator == OPERATOR_CALL_WITHIN_ALLOWANCE) &&
                 conditions[conditions[i].parent].paramType != ABI_TYPE_CALLDATA
             ) {
                 revert UnsuitableParent(i);
@@ -175,15 +175,15 @@ library Integrity {
 
             if (condition.paramType == ABI_TYPE_NONE) {
                 if (
-                    (condition.operator == Operator.EtherWithinAllowance ||
-                        condition.operator == Operator.CallWithinAllowance) &&
+                    (condition.operator == OPERATOR_ETHER_WITHIN_ALLOWANCE ||
+                        condition.operator == OPERATOR_CALL_WITHIN_ALLOWANCE) &&
                     childBounds.length != 0
                 ) {
                     revert UnsuitableChildCount(i);
                 }
                 if (
-                    (condition.operator >= Operator.And &&
-                        condition.operator <= Operator.Nor)
+                    (condition.operator >= OPERATOR_AND &&
+                        condition.operator <= OPERATOR_NOR)
                 ) {
                     if (childBounds.length == 0) {
                         revert UnsuitableChildCount(i);
@@ -212,13 +212,13 @@ library Integrity {
                 }
 
                 if (
-                    (condition.operator == Operator.ArraySome ||
-                        condition.operator == Operator.ArrayEvery) &&
+                    (condition.operator == OPERATOR_ARRAY_SOME ||
+                        condition.operator == OPERATOR_ARRAY_EVERY) &&
                     childBounds.length != 1
                 ) {
                     revert UnsuitableChildCount(i);
                 } else if (
-                    condition.operator == Operator.ArraySubset &&
+                    condition.operator == OPERATOR_ARRAY_SUBSET &&
                     childBounds.length > 256
                 ) {
                     revert UnsuitableChildCount(i);
@@ -229,8 +229,8 @@ library Integrity {
         for (uint256 i = 0; i < conditions.length; i++) {
             ConditionFlat memory condition = conditions[i];
             if (
-                ((condition.operator >= Operator.And &&
-                    condition.operator <= Operator.Nor) ||
+                ((condition.operator >= OPERATOR_AND &&
+                    condition.operator <= OPERATOR_NOR) ||
                     condition.paramType == ABI_TYPE_ARRAY) &&
                 childrenBounds[i].length > 1
             ) {
