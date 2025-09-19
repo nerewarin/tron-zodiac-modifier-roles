@@ -1,20 +1,28 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity >=0.8.17 <0.9.0;
 
-import "@gnosis-guild/zodiac-core/contracts/core/Modifier.sol";
+import "./AllowanceTracker.sol";
+import "./PermissionBuilder.sol";
+import "./PermissionChecker.sol";
+import "./PermissionLoader.sol";
 
 /**
- * @title TRON Roles Modifier - Simplified role-based access control for TRON Safe
- * @author Ported for TRON network
- * @notice This is a simplified version of the Zodiac Roles modifier adapted for TRON
+ * @title Zodiac Roles Mod - granular, role-based, access control for your
+ * on-chain avatar accounts (like Safe).
+ * @author Cristóvão Honorato - <cristovao.honorato@gnosis.io>
+ * @author Jan-Felix Schwarz  - <jan-felix.schwarz@gnosis.io>
+ * @author Auryn Macmillan    - <auryn.macmillan@gnosis.io>
+ * @author Nathan Ginnever    - <nathan.ginnever@gnosis.io>
  */
-contract TRONRoles is Modifier {
-    // Role management
+contract Roles is
+    Modifier,
+    AllowanceTracker,
+    PermissionBuilder,
+    PermissionChecker,
+    PermissionLoader
+{
     mapping(address => bytes32) public defaultRoles;
-    mapping(bytes32 => mapping(address => bool)) public roles;
-    mapping(bytes32 => mapping(address => bool)) public targets;
-    
-    // Events
+
     event AssignRoles(address module, bytes32[] roleKeys, bool[] memberOf);
     event RolesModSetup(
         address indexed initiator,
@@ -23,19 +31,23 @@ contract TRONRoles is Modifier {
         address target
     );
     event SetDefaultRole(address module, bytes32 defaultRoleKey);
-    event SetTarget(address target, bytes32 roleKey, bool allowed);
 
     error ArraysDifferentLength();
+
+    /// Sender is allowed to make this call, but the internal transaction failed
     error ModuleTransactionFailed();
 
     /// @param _owner Address of the owner
-    /// @param _avatar Address of the avatar (e.g. a TRON Safe)
+    /// @param _avatar Address of the avatar (e.g. a Gnosis Safe)
     /// @param _target Address of the contract that will call exec function
     constructor(address _owner, address _avatar, address _target) {
         bytes memory initParams = abi.encode(_owner, _avatar, _target);
         setUp(initParams);
     }
 
+    /// @dev There is no zero address check as solidty will check for
+    /// missing arguments and the space of invalid addresses is too large
+    /// to check. Invalid avatar or target address can be reset by owner.
     function setUp(bytes memory initParams) public override initializer {
         (address _owner, address _avatar, address _target) = abi.decode(
             initParams,
@@ -63,7 +75,7 @@ contract TRONRoles is Modifier {
             revert ArraysDifferentLength();
         }
         for (uint16 i; i < roleKeys.length; ++i) {
-            roles[roleKeys[i]][module] = memberOf[i];
+            roles[roleKeys[i]].members[module] = memberOf[i];
         }
         if (!isModuleEnabled(module)) {
             enableModule(module);
@@ -82,22 +94,9 @@ contract TRONRoles is Modifier {
         emit SetDefaultRole(module, roleKey);
     }
 
-    /// @dev Sets whether a target address is allowed for a specific role.
-    /// @param targetAddress Address to allow/deny.
-    /// @param roleKey Role for which to set the target.
-    /// @param allowed Whether the target is allowed for this role.
-    function setTarget(
-        address targetAddress,
-        bytes32 roleKey,
-        bool allowed
-    ) external onlyOwner {
-        targets[roleKey][targetAddress] = allowed;
-        emit SetTarget(targetAddress, roleKey, allowed);
-    }
-
     /// @dev Passes a transaction to the modifier.
     /// @param to Destination address of module transaction
-    /// @param value TRX value of module transaction
+    /// @param value Ether value of module transaction
     /// @param data Data payload of module transaction
     /// @param operation Operation type of module transaction
     /// @notice Can only be called by enabled modules
@@ -107,19 +106,21 @@ contract TRONRoles is Modifier {
         bytes calldata data,
         Operation operation
     ) public override returns (bool success) {
-        bytes32 roleKey = defaultRoles[msg.sender];
-        require(roles[roleKey][msg.sender], "Module not authorized for role");
-        require(targets[roleKey][to], "Target not allowed for role");
-        
+        Consumption[] memory consumptions = _authorize(
+            defaultRoles[msg.sender],
+            to,
+            value,
+            data,
+            operation
+        );
+        _flushPrepare(consumptions);
         success = exec(to, value, data, operation);
-        if (!success) {
-            revert ModuleTransactionFailed();
-        }
+        _flushCommit(consumptions, success);
     }
 
     /// @dev Passes a transaction to the modifier, expects return data.
     /// @param to Destination address of module transaction
-    /// @param value TRX value of module transaction
+    /// @param value Ether value of module transaction
     /// @param data Data payload of module transaction
     /// @param operation Operation type of module transaction
     /// @notice Can only be called by enabled modules
@@ -129,75 +130,77 @@ contract TRONRoles is Modifier {
         bytes calldata data,
         Operation operation
     ) public override returns (bool success, bytes memory returnData) {
-        bytes32 roleKey = defaultRoles[msg.sender];
-        require(roles[roleKey][msg.sender], "Module not authorized for role");
-        require(targets[roleKey][to], "Target not allowed for role");
-        
+        Consumption[] memory consumptions = _authorize(
+            defaultRoles[msg.sender],
+            to,
+            value,
+            data,
+            operation
+        );
+        _flushPrepare(consumptions);
         (success, returnData) = execAndReturnData(to, value, data, operation);
-        if (!success) {
-            revert ModuleTransactionFailed();
-        }
+        _flushCommit(consumptions, success);
     }
 
     /// @dev Passes a transaction to the modifier assuming the specified role.
     /// @param to Destination address of module transaction
-    /// @param value TRX value of module transaction
+    /// @param value Ether value of module transaction
     /// @param data Data payload of module transaction
     /// @param operation Operation type of module transaction
     /// @param roleKey Identifier of the role to assume for this transaction
+    /// @param shouldRevert Should the function revert on inner execution returning success false?
     /// @notice Can only be called by enabled modules
     function execTransactionWithRole(
         address to,
         uint256 value,
         bytes calldata data,
         Operation operation,
-        bytes32 roleKey
+        bytes32 roleKey,
+        bool shouldRevert
     ) public returns (bool success) {
-        require(roles[roleKey][msg.sender], "Module not authorized for role");
-        require(targets[roleKey][to], "Target not allowed for role");
-        
+        Consumption[] memory consumptions = _authorize(
+            roleKey,
+            to,
+            value,
+            data,
+            operation
+        );
+        _flushPrepare(consumptions);
         success = exec(to, value, data, operation);
-        if (!success) {
+        if (shouldRevert && !success) {
             revert ModuleTransactionFailed();
         }
+        _flushCommit(consumptions, success);
     }
 
     /// @dev Passes a transaction to the modifier assuming the specified role. Expects return data.
     /// @param to Destination address of module transaction
-    /// @param value TRX value of module transaction
+    /// @param value Ether value of module transaction
     /// @param data Data payload of module transaction
     /// @param operation Operation type of module transaction
     /// @param roleKey Identifier of the role to assume for this transaction
+    /// @param shouldRevert Should the function revert on inner execution returning success false?
     /// @notice Can only be called by enabled modules
     function execTransactionWithRoleReturnData(
         address to,
         uint256 value,
         bytes calldata data,
         Operation operation,
-        bytes32 roleKey
+        bytes32 roleKey,
+        bool shouldRevert
     ) public returns (bool success, bytes memory returnData) {
-        require(roles[roleKey][msg.sender], "Module not authorized for role");
-        require(targets[roleKey][to], "Target not allowed for role");
-        
+        Consumption[] memory consumptions = _authorize(
+            roleKey,
+            to,
+            value,
+            data,
+            operation
+        );
+        _flushPrepare(consumptions);
         (success, returnData) = execAndReturnData(to, value, data, operation);
-        if (!success) {
+        if (shouldRevert && !success) {
             revert ModuleTransactionFailed();
         }
-    }
-
-    /// @dev Check if a module has a specific role
-    /// @param module Module address to check
-    /// @param roleKey Role to check
-    /// @return Whether the module has the role
-    function hasRole(address module, bytes32 roleKey) external view returns (bool) {
-        return roles[roleKey][module];
-    }
-
-    /// @dev Check if a target is allowed for a specific role
-    /// @param targetAddress Target address to check
-    /// @param roleKey Role to check
-    /// @return Whether the target is allowed for the role
-    function isTargetAllowed(address targetAddress, bytes32 roleKey) external view returns (bool) {
-        return targets[roleKey][targetAddress];
+        _flushCommit(consumptions, success);
     }
 }

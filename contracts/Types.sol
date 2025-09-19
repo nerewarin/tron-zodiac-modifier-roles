@@ -99,7 +99,7 @@ enum Operator {
     /* 26: */ _Placeholder26,
     /* 27: */ _Placeholder27,
     /* 28: */ WithinAllowance, // paramType: Static
-    /* 29: */ TRXWithinAllowance, // paramType: None - TRON adaptation
+    /* 29: */ EtherWithinAllowance, // paramType: None
     /* 30: */ CallWithinAllowance, // paramType: None
     /* 31: */ _Placeholder31
 }
