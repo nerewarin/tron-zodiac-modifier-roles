@@ -89,12 +89,12 @@ If automatic verification fails or you want to verify manually:
 yarn verify:nile
 
 # Or verify with custom parameters
-yarn verify <contract-address> <contract-name>
+yarn verify <contract-address> Roles
 ```
 
 #### Verification Status
 Check verification status on TronScan:
-- **Nile Testnet**: https://nile.tronscan.org/#/contract/TG6AxQr665rkjC7RNkwzZRHZT6jCmkDwmh
+- **Nile Testnet**: https://nile.tronscan.org/#/contract/THBVL3AArJYMbnBKd4y3tKuEkvRSrMzKN6
 - **Shasta Testnet**: https://shasta.tronscan.org/#/contract/YOUR_CONTRACT_ADDRESS
 - **Mainnet**: https://tronscan.org/#/contract/YOUR_CONTRACT_ADDRESS
 
@@ -135,45 +135,58 @@ The contracts have been developed with [Solidity 0.8.24](https://github.com/ethe
 
 ### 1. Deploy the Module
 ```javascript
-const roles = await TRONRoles.new(owner, avatar, target);
+const roles = await Roles.new(owner, avatar, target);
 ```
 
-### 2. Define Roles
+### 2. Generate Role Keys
 ```javascript
-const ADMIN_ROLE = web3.utils.keccak256('ADMIN_ROLE');
-const USER_ROLE = web3.utils.keccak256('USER_ROLE');
+// Generate role keys using keccak256 hash
+const ROLE_KEY = "0x" + web3.utils.keccak256("MY_ROLE").slice(2);
+const ADMIN_ROLE = "0x" + web3.utils.keccak256("ADMIN").slice(2);
 ```
 
-### 3. Assign Roles to Modules
+### 3. Enable Module and Assign Roles
 ```javascript
+// Enable a module (e.g., another Zodiac module)
+await roles.enableModule(moduleAddress, { from: owner });
+
+// Assign roles to the module
 await roles.assignRoles(
   moduleAddress,
-  [ADMIN_ROLE, USER_ROLE],
-  [true, false], // module has ADMIN_ROLE, not USER_ROLE
+  [ROLE_KEY, ADMIN_ROLE],
+  [true, false], // module has ROLE_KEY, not ADMIN_ROLE
   { from: owner }
 );
+
+// Set default role for the module
+await roles.setDefaultRole(moduleAddress, ROLE_KEY, { from: owner });
 ```
 
-### 4. Set Target Permissions
+### 4. Configure Permissions
 ```javascript
-await roles.setTarget(
+// Allow role to call specific target
+await roles.scopeTarget(ROLE_KEY, targetAddress, { from: owner });
+
+// Allow role to call specific function on target
+await roles.scopeFunction(
+  ROLE_KEY,
   targetAddress,
-  ADMIN_ROLE,
-  true, // Allow ADMIN_ROLE to interact with targetAddress
+  functionSelector,
+  { from: owner }
+);
+
+// Set execution options (call, delegatecall, or both)
+await roles.scopeExecutionOptions(
+  ROLE_KEY,
+  targetAddress,
+  ExecutionOptions.Both, // Allow both call and delegatecall
   { from: owner }
 );
 ```
 
-### 5. Set Default Role for Module
+### 5. Execute Transactions
 ```javascript
-await roles.setDefaultRole(moduleAddress, ADMIN_ROLE, { from: owner });
-```
-
-### 6. Execute Transactions
-Modules can now execute transactions through the roles modifier:
-
-```javascript
-// Using default role
+// Using default role (set with setDefaultRole)
 await roles.execTransactionFromModule(
   targetAddress,
   value,
@@ -188,7 +201,7 @@ await roles.execTransactionWithRole(
   value,
   data,
   operation,
-  roleKey,
+  ROLE_KEY,
   { from: moduleAddress }
 );
 ```
@@ -214,7 +227,9 @@ await roles.execTransactionWithRole(
 
 - `assignRoles(module, roleKeys, memberOf)`: Assign/revoke roles for a module
 - `setDefaultRole(module, roleKey)`: Set default role for a module
-- `setTarget(target, roleKey, allowed)`: Allow/deny target for a role
+- `scopeTarget(roleKey, target)`: Allow role to call specific target
+- `scopeFunction(roleKey, target, functionSelector)`: Allow role to call specific function
+- `scopeExecutionOptions(roleKey, target, options)`: Set execution options (call/delegatecall)
 - `execTransactionFromModule(to, value, data, operation)`: Execute with default role
 - `execTransactionWithRole(to, value, data, operation, roleKey)`: Execute with specific role
 
@@ -223,6 +238,7 @@ await roles.execTransactionWithRole(
 - `hasRole(module, roleKey)`: Check if module has role
 - `isTargetAllowed(target, roleKey)`: Check if target is allowed for role
 - `defaultRoles(module)`: Get default role for module
+- `getTargetAllowance(roleKey, target)`: Get allowance for role-target combination
 
 ## Network Configuration
 

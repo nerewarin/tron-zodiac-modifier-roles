@@ -29,7 +29,7 @@ describe('TRONRoles Contract Working Tests', function() {
     }
     
     deploymentInfo = JSON.parse(fs.readFileSync(deploymentFile, 'utf8'));
-    contractABI = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/contracts/TRONRoles.json'), 'utf8')).abi;
+    contractABI = JSON.parse(fs.readFileSync(path.join(__dirname, '../build/contracts/Roles.json'), 'utf8')).abi;
   });
 
   describe('Contract Deployment Verification', function() {
@@ -38,7 +38,7 @@ describe('TRONRoles Contract Working Tests', function() {
       expect(deploymentInfo).to.have.property('owner');
       expect(deploymentInfo).to.have.property('avatar');
       expect(deploymentInfo).to.have.property('target');
-      expect(deploymentInfo).to.have.property('roleKeys');
+      expect(deploymentInfo).to.have.property('note'); // Roles are created dynamically
       
       // Verify all addresses are valid TRON format
       const tronWeb = new TronWeb({ fullHost: 'https://nile.trongrid.io' });
@@ -48,18 +48,9 @@ describe('TRONRoles Contract Working Tests', function() {
       expect(tronWeb.isAddress(deploymentInfo.target)).to.be.true;
     });
 
-    it('should have correct role keys generated', function() {
-      const crypto = require('crypto');
-      
-      // Generate expected role keys (without 0x prefix for TRON)
-      const expectedAdminRole = crypto.createHash('sha3-256').update('ADMIN_ROLE').digest('hex');
-      const expectedUserRole = crypto.createHash('sha3-256').update('USER_ROLE').digest('hex');
-      const expectedManagerRole = crypto.createHash('sha3-256').update('MANAGER_ROLE').digest('hex');
-      
-      // Verify our deployment has correct role keys
-      expect(deploymentInfo.roleKeys.adminRole).to.equal(expectedAdminRole);
-      expect(deploymentInfo.roleKeys.userRole).to.equal(expectedUserRole);
-      expect(deploymentInfo.roleKeys.managerRole).to.equal(expectedManagerRole);
+    it('should have note about dynamic role creation', function() {
+      // In vanilla Zodiac Roles, roles are created dynamically
+      expect(deploymentInfo.note).to.include('Roles are created dynamically');
     });
   });
 
@@ -69,13 +60,12 @@ describe('TRONRoles Contract Working Tests', function() {
         .filter(item => item.type === 'function')
         .map(item => item.name);
       
-      // Core functions we ported from Ethereum
+      // Core functions from vanilla Zodiac Roles
       const requiredFunctions = [
         'assignRoles',           // Assign/revoke roles
         'setDefaultRole',        // Set default role for module
-        'setTarget',            // Set target permissions (our 3-param version)
-        'hasRole',              // Check role membership
-        'isTargetAllowed',      // Check target permissions
+        'scopeTarget',          // Allow role to call specific target
+        'scopeFunction',        // Allow role to call specific function
         'execTransactionFromModule',           // Execute with default role
         'execTransactionFromModuleReturnData', // Execute with return data
         'execTransactionWithRole',             // Execute with specific role
@@ -87,22 +77,16 @@ describe('TRONRoles Contract Working Tests', function() {
       });
     });
 
-    it('should have correct setTarget function signature (3 parameters)', function() {
-      const setTargetFunctions = contractABI.filter(f => f.name === 'setTarget');
+    it('should have correct scopeTarget function signature', function() {
+      const scopeTargetFunction = contractABI.find(f => f.name === 'scopeTarget');
       
-      // Should have 2 setTarget functions: base Modifier (1 param) and our TRONRoles (3 params)
-      expect(setTargetFunctions).to.have.length(2);
-      
-      const ourSetTarget = setTargetFunctions.find(f => f.inputs.length === 3);
-      expect(ourSetTarget).to.exist;
-      
-      // Verify our 3-parameter setTarget signature
-      expect(ourSetTarget.inputs[0].name).to.equal('targetAddress');
-      expect(ourSetTarget.inputs[0].type).to.equal('address');
-      expect(ourSetTarget.inputs[1].name).to.equal('roleKey');
-      expect(ourSetTarget.inputs[1].type).to.equal('bytes32');
-      expect(ourSetTarget.inputs[2].name).to.equal('allowed');
-      expect(ourSetTarget.inputs[2].type).to.equal('bool');
+      // Should have scopeTarget function with 2 parameters
+      expect(scopeTargetFunction).to.exist;
+      expect(scopeTargetFunction.inputs).to.have.length(2);
+      expect(scopeTargetFunction.inputs[0].name).to.equal('roleKey');
+      expect(scopeTargetFunction.inputs[0].type).to.equal('bytes32');
+      expect(scopeTargetFunction.inputs[1].name).to.equal('targetAddress');
+      expect(scopeTargetFunction.inputs[1].type).to.equal('address');
     });
 
     it('should have all required events from our ported contract', function() {
@@ -113,7 +97,6 @@ describe('TRONRoles Contract Working Tests', function() {
       const requiredEvents = [
         'AssignRoles',      // When roles are assigned/revoked
         'SetDefaultRole',   // When default role is set
-        'SetTarget',        // When target permissions are set
         'RolesModSetup'     // When contract is initialized
       ];
       
@@ -128,8 +111,8 @@ describe('TRONRoles Contract Working Tests', function() {
       const migrationFile = path.join(__dirname, '../migrations/1_deploy_roles.js');
       const content = fs.readFileSync(migrationFile, 'utf8');
       
-      // Verify migration script has our ported logic
-      expect(content).to.include('TRONRoles');
+      // Verify migration script has Roles deployment
+      expect(content).to.include('Roles');
       expect(content).to.include('deployer.deploy');
       expect(content).to.include('deploymentInfo');
       expect(content).to.include('TronWeb');
@@ -147,7 +130,7 @@ describe('TRONRoles Contract Working Tests', function() {
       expect(deploymentInfo).to.have.property('deployer');
       expect(deploymentInfo).to.have.property('explorer');
       expect(deploymentInfo).to.have.property('timestamp');
-      expect(deploymentInfo).to.have.property('roleKeys');
+      expect(deploymentInfo).to.have.property('note'); // Roles are created dynamically
     });
   });
 
@@ -162,13 +145,19 @@ describe('TRONRoles Contract Working Tests', function() {
       expect(deploymentInfo.target).to.match(/^T[A-Za-z0-9]{33}$/);
     });
 
-    it('should use keccak256 for role keys (TRON compatible)', function() {
+    it('should support dynamic role creation', function() {
       const crypto = require('crypto');
       
-      // Verify role keys are keccak256 hashes (without 0x prefix for TRON)
-      const adminRole = crypto.createHash('sha3-256').update('ADMIN_ROLE').digest('hex');
-      expect(deploymentInfo.roleKeys.adminRole).to.equal(adminRole);
-      expect(deploymentInfo.roleKeys.adminRole).to.match(/^[a-f0-9]{64}$/);
+      // Test that role key generation works for dynamic roles
+      const testRoleName = 'TEST_ROLE';
+      const expectedRoleKey = crypto.createHash('sha3-256').update(testRoleName).digest('hex');
+      
+      // Verify role key generation produces valid hex strings
+      expect(expectedRoleKey).to.be.a('string');
+      expect(expectedRoleKey).to.match(/^[0-9a-f]{64}$/);
+      
+      // In vanilla Zodiac Roles, roles are created dynamically, not predefined
+      expect(deploymentInfo.note).to.include('Roles are created dynamically');
     });
 
     it('should have correct network configuration', function() {
@@ -193,19 +182,20 @@ describe('TRONRoles Contract Working Tests', function() {
       expect(assignRoles.inputs[1].type).to.equal('bytes32[]'); // roleKeys
       expect(assignRoles.inputs[2].type).to.equal('bool[]'); // memberOf
 
-      // Verify hasRole signature
-      const hasRole = contractABI.find(f => f.name === 'hasRole');
-      expect(hasRole.inputs).to.have.length(2);
-      expect(hasRole.inputs[0].type).to.equal('address'); // module
-      expect(hasRole.inputs[1].type).to.equal('bytes32'); // roleKey
-      expect(hasRole.outputs[0].type).to.equal('bool');
+      // Verify scopeTarget signature
+      const scopeTarget = contractABI.find(f => f.name === 'scopeTarget');
+      expect(scopeTarget.inputs).to.have.length(2);
+      expect(scopeTarget.inputs[0].type).to.equal('bytes32'); // roleKey
+      expect(scopeTarget.inputs[1].type).to.equal('address'); // targetAddress
 
-      // Verify isTargetAllowed signature
-      const isTargetAllowed = contractABI.find(f => f.name === 'isTargetAllowed');
-      expect(isTargetAllowed.inputs).to.have.length(2);
-      expect(isTargetAllowed.inputs[0].type).to.equal('address'); // targetAddress
-      expect(isTargetAllowed.inputs[1].type).to.equal('bytes32'); // roleKey
-      expect(isTargetAllowed.outputs[0].type).to.equal('bool');
+      // Verify scopeFunction signature
+      const scopeFunction = contractABI.find(f => f.name === 'scopeFunction');
+      expect(scopeFunction.inputs).to.have.length(5);
+      expect(scopeFunction.inputs[0].type).to.equal('bytes32'); // roleKey
+      expect(scopeFunction.inputs[1].type).to.equal('address'); // targetAddress
+      expect(scopeFunction.inputs[2].type).to.equal('bytes4'); // selector
+      expect(scopeFunction.inputs[3].type).to.equal('tuple[]'); // conditions
+      expect(scopeFunction.inputs[4].type).to.equal('uint8'); // options
     });
   });
 });

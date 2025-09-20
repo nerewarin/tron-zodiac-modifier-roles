@@ -17,7 +17,7 @@
     "deploy:mainnet": "tronbox migrate --network mainnet",
     "console": "tronbox console",
     "verify": "node scripts/verify-contract.js",
-    "verify:nile": "node scripts/verify-contract.js TG6AxQr665rkjC7RNkwzZRHZT6jCmkDwmh TRONRoles",
+    "verify:nile": "node scripts/verify-contract.js THBVL3AArJYMbnBKd4y3tKuEkvRSrMzKN6 Roles",
     "prepack": "yarn run clean && yarn run build",
     "prepare": "yarn run clean && yarn run build",
     "lint": "yarn lint:sol",

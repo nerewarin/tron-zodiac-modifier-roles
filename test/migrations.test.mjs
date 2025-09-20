@@ -36,7 +36,7 @@ describe('Migration Scripts Tests', function() {
       expect(deploymentInfo).to.have.property('owner');
       expect(deploymentInfo).to.have.property('avatar');
       expect(deploymentInfo).to.have.property('target');
-      expect(deploymentInfo).to.have.property('roleKeys');
+      expect(deploymentInfo).to.have.property('note'); // Roles are created dynamically
     });
 
     it('should have valid TRON addresses', function() {
@@ -48,15 +48,8 @@ describe('Migration Scripts Tests', function() {
       expect(tronWeb.isAddress(deploymentInfo.target)).to.be.true;
     });
 
-    it('should have valid role keys', function() {
-      expect(deploymentInfo.roleKeys).to.have.property('adminRole');
-      expect(deploymentInfo.roleKeys).to.have.property('userRole');
-      expect(deploymentInfo.roleKeys).to.have.property('managerRole');
-      
-      // Validate role key format (64 hex characters)
-      expect(deploymentInfo.roleKeys.adminRole).to.match(/^[a-f0-9]{64}$/);
-      expect(deploymentInfo.roleKeys.userRole).to.match(/^[a-f0-9]{64}$/);
-      expect(deploymentInfo.roleKeys.managerRole).to.match(/^[a-f0-9]{64}$/);
+    it('should have note about dynamic role creation', function() {
+      expect(deploymentInfo.note).to.include('Roles are created dynamically');
     });
 
     it('should have valid timestamps', function() {
@@ -82,14 +75,14 @@ describe('Migration Scripts Tests', function() {
       expect(fs.existsSync(migrationFile)).to.be.true;
       
       const content = fs.readFileSync(migrationFile, 'utf8');
-      expect(content).to.include('TRONRoles');
+      expect(content).to.include('Roles');
       expect(content).to.include('deployer.deploy');
       expect(content).to.include('deploymentInfo');
     });
   });
 
   describe('Migration Script Content', function() {
-    it('should have proper TRONRoles deployment', function() {
+    it('should have proper Roles deployment', function() {
       const migrationFile = path.join(__dirname, '../migrations/1_deploy_roles.js');
       const content = fs.readFileSync(migrationFile, 'utf8');
       
@@ -99,7 +92,7 @@ describe('Migration Scripts Tests', function() {
       expect(content).to.include('TronWeb');
       
       // Check for deployment logic
-      expect(content).to.include('deployer.deploy(TRONRoles');
+      expect(content).to.include('deployer.deploy(Roles');
       expect(content).to.include('deploymentInfo');
       expect(content).to.include('writeFileSync');
     });
@@ -114,8 +107,8 @@ describe('Migration Scripts Tests', function() {
   });
 
   describe('Contract Artifacts', function() {
-    it('should have TRONRoles artifact', function() {
-      const artifactFile = path.join(__dirname, '../build/contracts/TRONRoles.json');
+    it('should have Roles artifact', function() {
+      const artifactFile = path.join(__dirname, '../build/contracts/Roles.json');
       expect(fs.existsSync(artifactFile)).to.be.true;
       
       const artifact = JSON.parse(fs.readFileSync(artifactFile, 'utf8'));
