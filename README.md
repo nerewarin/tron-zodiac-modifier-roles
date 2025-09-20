@@ -133,78 +133,32 @@ The contracts have been developed with [Solidity 0.8.24](https://github.com/ethe
 
 ## Usage
 
+The Zodiac Roles system is designed to work with TRON Safe accounts. Here's how to use it:
+
 ### 1. Deploy the Module
-```javascript
-const roles = await Roles.new(owner, avatar, target);
+Deploy the Roles contract using the migration script:
+```bash
+yarn deploy:nile
 ```
 
 ### 2. Generate Role Keys
-```javascript
-// Generate role keys using keccak256 hash
-const ROLE_KEY = "0x" + web3.utils.keccak256("MY_ROLE").slice(2);
-const ADMIN_ROLE = "0x" + web3.utils.keccak256("ADMIN").slice(2);
+Role keys are generated using keccak256 hashing:
+```bash
+# Example role key generation
+node -e "console.log('0x' + require('crypto').createHash('sha3-256').update('MY_ROLE').digest('hex'))"
 ```
 
-### 3. Enable Module and Assign Roles
-```javascript
-// Enable a module (e.g., another Zodiac module)
-await roles.enableModule(moduleAddress, { from: owner });
+### 3. Configure Roles and Permissions
+Use the deployed contract to:
+- Assign roles to modules with `assignRoles()`
+- Set default roles with `setDefaultRole()`
+- Configure target permissions with `scopeTarget()`
+- Set function permissions with `scopeFunction()`
 
-// Assign roles to the module
-await roles.assignRoles(
-  moduleAddress,
-  [ROLE_KEY, ADMIN_ROLE],
-  [true, false], // module has ROLE_KEY, not ADMIN_ROLE
-  { from: owner }
-);
-
-// Set default role for the module
-await roles.setDefaultRole(moduleAddress, ROLE_KEY, { from: owner });
-```
-
-### 4. Configure Permissions
-```javascript
-// Allow role to call specific target
-await roles.scopeTarget(ROLE_KEY, targetAddress, { from: owner });
-
-// Allow role to call specific function on target
-await roles.scopeFunction(
-  ROLE_KEY,
-  targetAddress,
-  functionSelector,
-  { from: owner }
-);
-
-// Set execution options (call, delegatecall, or both)
-await roles.scopeExecutionOptions(
-  ROLE_KEY,
-  targetAddress,
-  ExecutionOptions.Both, // Allow both call and delegatecall
-  { from: owner }
-);
-```
-
-### 5. Execute Transactions
-```javascript
-// Using default role (set with setDefaultRole)
-await roles.execTransactionFromModule(
-  targetAddress,
-  value,
-  data,
-  operation,
-  { from: moduleAddress }
-);
-
-// Using specific role
-await roles.execTransactionWithRole(
-  targetAddress,
-  value,
-  data,
-  operation,
-  ROLE_KEY,
-  { from: moduleAddress }
-);
-```
+### 4. Execute Transactions
+Modules can execute transactions through:
+- `execTransactionFromModule()` - using default role
+- `execTransactionWithRole()` - using specific role
 
 ## Integration with TRON Safe
 
@@ -258,12 +212,15 @@ After deployment, verify contracts on TronScan using the deployment address.
 
 ## Differences from Ethereum Version
 
-This TRON version is simplified compared to the full Zodiac Roles implementation:
+This TRON version is a complete port of the Zodiac Roles implementation with the following changes:
 
-- **No Complex Conditions**: Simplified to basic role and target permissions
-- **No Allowance Tracking**: Removed complex allowance and consumption tracking
-- **No ABI Decoding**: Simplified permission checking
-- **TRON Optimized**: Designed specifically for TRON's energy model
+- **Full Contract Port**: Complete port of all Zodiac Roles contracts from Hardhat to TronBox
+- **Enum Compatibility**: AbiType and Operator enums converted to uint8 for TronWeb compatibility
+- **TRON Address Format**: Adapted for TRON Base58Check address format
+- **TronBox Migration**: Converted from Hardhat deployment to TronBox migration system
+- **TRON Network Support**: Added support for Nile testnet, Shasta testnet, and TRON mainnet
+- **Contract Verification**: Added TronScan verification support
+- **Simplified Testing**: Basic deployment verification tests only (vs. 37 comprehensive test files in original)
 
 ## Security and Liability
 
