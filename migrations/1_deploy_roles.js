@@ -1,7 +1,7 @@
 const Roles = artifacts.require('Roles');
 const Integrity = artifacts.require('Integrity');
 const Packer = artifacts.require('Packer');
-const { getAddresses, getAdminRole, getUserRole, getManagerRole } = require('../constants/addresses');
+const { getAddresses } = require('../constants/addresses');
 const fs = require('fs');
 const path = require('path');
 const TronWeb = require('tronweb');
@@ -138,12 +138,8 @@ module.exports = async function (deployer, network, accounts) {
     target: target,
     deployer: accounts,
     explorer: networkConfig.explorer,
-    timestamp: new Date().toISOString(),
-    roleKeys: {
-      adminRole: getAdminRole(),
-      userRole: getUserRole(),
-      managerRole: getManagerRole()
-    }
+    timestamp: new Date().toISOString()
+    // Note: Roles are created dynamically in Zodiac Roles system
   };
   
   // Save deployment info to JSON file
@@ -165,11 +161,9 @@ module.exports = async function (deployer, network, accounts) {
   console.log('  • Contract URL:', `${networkConfig.explorer}/#/contract/${tronAddress}`);
   console.log('  • Deployment info saved to:', deploymentFile);
   
-  // Log available role keys for reference
-  console.log('Available role keys:');
-  console.log('ADMIN_ROLE:', getAdminRole());
-  console.log('USER_ROLE:', getUserRole());
-  console.log('MANAGER_ROLE:', getManagerRole());
+  // Note: Roles are created dynamically in Zodiac Roles system
+  console.log('ℹ️  Roles are created dynamically using assignRole() function');
+  console.log('   Use getRoleKey("ROLE_NAME") to generate role keys as needed');
 
   return rolesInstance;
 };

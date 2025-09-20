@@ -6,14 +6,15 @@
 // Helper function for role keys
 const getRoleKey = (roleName) => {
   // These are the actual keccak256 hash values for role names (without 0x prefix for TRON)
-  // Calculated using: keccak256("ROLE_NAME") in Solidity
+  // Calculated using: 
+  // node -e "const crypto = require('crypto'); console.log('ADMIN_ROLE:', crypto.createHash('sha3-256').update('ADMIN_ROLE').digest('hex'));
   const roleHashes = {
     'ADMIN_ROLE': 'c2b6e8e1a784262ec27d89f86cdf96f4128d4bb3018cda66eaaac98009c8264c',
     'USER_ROLE': '7458c68a8d5911e046867ad77078bbb0dcc6dce6a75d9fa201035a7e604f56cb', 
     'MANAGER_ROLE': '55f77dd6b80916682b17948cfd1fe865e4f3af81a47c419611309aadaf76e376'
   };
   
-  return roleHashes[roleName] || '0000000000000000000000000000000000000000000000000000000000000000';
+  return roleHashes[roleName];
 };
 
 const ADDRESSES = {
@@ -158,8 +159,6 @@ module.exports = {
   getEnergyConfig: () => CONFIG.energy,
   getVersions: () => CONFIG.versions,
   
-  // Role helpers
-  getAdminRole: () => getRoleKey('ADMIN_ROLE'),
-  getUserRole: () => getRoleKey('USER_ROLE'),
-  getManagerRole: () => getRoleKey('MANAGER_ROLE')
+  // Role helpers - roles are created dynamically in Zodiac Roles
+  // Use getRoleKey('ROLE_NAME') to generate role keys as needed
 };

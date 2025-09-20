@@ -100,11 +100,11 @@ Check verification status on TronScan:
 
 ## TRON-Specific Features
 
-This simplified version of the Roles modifier has been adapted for TRON with:
+This full Zodiac Roles implementation has been adapted for TRON with:
 
-- **Simplified Permission Model**: Basic role-based access control
+- **Complete Permission System**: Full granular role-based access control with complex conditions
 - **TRON Compatibility**: Works with TRON Safe and TRX transfers
-- **Energy Optimization**: Efficient for TRON's energy model
+- **Enum Compatibility**: Fixed enum issues for TronWeb compatibility
 - **TronBox Integration**: Native TRON deployment and testing
 
 ## About the Roles Modifier
